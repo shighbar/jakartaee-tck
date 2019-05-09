@@ -101,11 +101,11 @@ spec:
     imagePullPolicy: Always
     env:
       - name: JAVA_TOOL_OPTIONS
-        value: -Xmx4G
+        value: -Xmx3G
     resources:
       limits:
-        memory: "6Gi"
-        cpu: "2.0"
+        memory: "4Gi"
+        cpu: "1.0"
   - name: james-mail
     image: anajosep/cts-mailserver:0.1
     command:
@@ -117,10 +117,10 @@ spec:
     imagePullPolicy: Always
     env:
       - name: JAVA_TOOL_OPTIONS
-        value: -Xmx2G
+        value: -Xmx1G
     resources:
       limits:
-        memory: "2Gi"
+        memory: "1Gi"
         cpu: "0.5"
 """
     }
