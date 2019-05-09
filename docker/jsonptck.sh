@@ -32,7 +32,7 @@ cd $TS_HOME/bin
 
 sed -i "s#^report.dir=.*#report.dir=$TCK_HOME/jsonptckreport/jsonptck/#g" ts.jte
 sed -i "s#^work.dir=.*#work.dir=$TCK_HOME/jsonptckwork/jsonptck#g" ts.jte
-sed -i "s#jsonp\.classes=.*#jsonp.classes=$TCK_HOME/glassfish5/glassfish/modules/javax.json-api.jar:$TCK_HOME/glassfish5/glassfish/modules/javax.json.bind-api.jar:$TCK_HOME/glassfish5/glassfish/modules/javax.json.jar#g" ts.jte
+sed -i "s#jsonp\.classes=.*#jsonp.classes=$TCK_HOME/glassfish5/glassfish/modules/jakarta.json.jar:$TCK_HOME/glassfish5/glassfish/modules/jakarta.json.jar#g" ts.jte
 
 mkdir -p $TCK_HOME/jsonptckreport/jsonptck
 mkdir -p $TCK_HOME/jsonptckwork/jsonptck
@@ -51,4 +51,4 @@ echo "1 ${TCK_NAME} ${HOST}" > ${WORKSPACE}/args.txt
 mkdir -p ${WORKSPACE}/results/junitreports/
 ${JAVA_HOME}/bin/java -Djunit.embed.sysout=true -jar ${WORKSPACE}/docker/JTReportParser/JTReportParser.jar ${WORKSPACE}/args.txt ${JT_REPORT_DIR} ${WORKSPACE}/results/junitreports/
 
-tar zcvf ${WORKSPACE}/${TCK_NAME}-results.tar.gz ${TCK_HOME}/${TCK_NAME}report ${TCK_HOME}/${TCK_NAME}work ${WORKSPACE}/results/junitreports/
+tar zcvf ${WORKSPACE}/${TCK_NAME}-results.tar.gz ${TCK_HOME}/${TCK_NAME}report ${TCK_HOME}/${TCK_NAME}work ${WORKSPACE}/results/junitreports/ ${TCK_HOME}/glassfish5/glassfish/domains/domain1 $TCK_HOME/$TCK_NAME/bin/ts.*

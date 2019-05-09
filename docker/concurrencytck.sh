@@ -46,7 +46,7 @@ rm -f $TS_HOME/dist/com/sun/ts/tests/concurrency/spec/ContextService/contextProp
 
 cd $TS_HOME/bin
 sed -i "s#webcontainer\.home=.*#webcontainer.home=$TCK_HOME/glassfish5/glassfish#g" ts.jte
-sed -i 's#concurrency\.classes=.*#concurrency.classes=${webcontainer.home}/modules/javax.enterprise.concurrent-api.jar${pathsep}${webcontainer.home}/modules/javax.servlet-api.jar${pathsep}${webcontainer.home}/modules/javax.ejb-api.jar${pathsep}${webcontainer.home}/modules/jta.jar${pathsep}${webcontainer.home}/modules/javax.enterprise.deploy-api.jar#g' ts.jte
+sed -i 's#concurrency\.classes=.*#concurrency.classes=${webcontainer.home}/modules/jakarta.enterprise.concurrent-api.jar${pathsep}${webcontainer.home}/modules/jakarta.servlet-api.jar${pathsep}${webcontainer.home}/modules/jakarta.ejb-api.jar${pathsep}${webcontainer.home}/modules/jta.jar${pathsep}${webcontainer.home}/modules/jakarta.enterprise.deploy-api.jar#g' ts.jte
 sed -i "s#^report.dir=.*#report.dir=$TCK_HOME/concurrencytckreport/concurrencytck#g" ts.jte
 sed -i "s#^work.dir=.*#work.dir=$TCK_HOME/concurrencytckwork/concurrencytck#g" ts.jte
 
@@ -68,4 +68,4 @@ echo "1 ${TCK_NAME} ${HOST}" > ${WORKSPACE}/args.txt
 mkdir -p ${WORKSPACE}/results/junitreports/
 ${JAVA_HOME}/bin/java -Djunit.embed.sysout=true -jar ${WORKSPACE}/docker/JTReportParser/JTReportParser.jar ${WORKSPACE}/args.txt ${JT_REPORT_DIR} ${WORKSPACE}/results/junitreports/
 
-tar zcvf ${WORKSPACE}/${TCK_NAME}-results.tar.gz ${TCK_HOME}/${TCK_NAME}report ${TCK_HOME}/${TCK_NAME}work ${WORKSPACE}/results/junitreports/
+tar zcvf ${WORKSPACE}/${TCK_NAME}-results.tar.gz ${TCK_HOME}/${TCK_NAME}report ${TCK_HOME}/${TCK_NAME}work ${WORKSPACE}/results/junitreports/ ${TCK_HOME}/glassfish5/glassfish/domains/domain1 $TCK_HOME/concurrencytck/bin/ts.*

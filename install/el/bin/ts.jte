@@ -35,7 +35,7 @@
 #		el.classes=/el-impl.jar${pathsep}/el-api.jar 
 #
 #   Example:(Glassfish 4)
-#       el.classes=/ri/glassfish3/glassfish/modules/javax.el.jar
+#       el.classes=/ri/glassfish3/glassfish/modules/jakarta.el.jar
 #
 #
 ########################################################
@@ -66,7 +66,7 @@ variable.mapper=com.sun.el.lang.VariableMapperImpl
 #   /Library/Java/JavaVirtualMachines/jdk1.7.0_09.jdk/Contents/Home/jre/lib/rt.jar
 #
 ########################################################
-sigTestClasspath=
+sigTestClasspath=${el.classes}${pathsep}${java.home}/lib/rt.jar
 
 
 ########################################################

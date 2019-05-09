@@ -62,7 +62,7 @@ sed -i 's#jaxrpc\.tool=.*#jaxrpc.tool=\$\{jaxrpc.home\}/bin/wscompile#g' build.p
 sed -i 's#jaxrpc.deploy.tool=.*#jaxrpc.deploy.tool=\$\{jaxrpc.home\}/bin/wsdeploy#g' build.properties
 sed -i 's#\${class.dir}#/ts/jaxrpctck/classes#g' build.properties
 
-sed -i 's#local.classes=.*#local.classes=\$\{webserver.home\}/modules/webservices-osgi.jar:\$\{webserver.home\}/modules/javax.xml.rpc-api.jar:\${webserver.home\}/modules/javax.servlet-api.jar:\$\{webserver.home\}/modules/javax.mail.jar:\$\{webserver.home\}/modules/jaxb-osgi.jar:\$\{webserver.home\}/modules/javax.ejb-api.jar:\$\{webserver.home\}/modules/glassfish-naming.jar:\$\{webserver.home\}/modules/bean-validator.jar#g' build.properties
+sed -i 's#local.classes=.*#local.classes=\$\{webserver.home\}/modules/webservices-osgi.jar:\$\{webserver.home\}/modules/jakarta.xml.rpc-api.jar:\${webserver.home\}/modules/jakarta.servlet-api.jar:\$\{webserver.home\}/modules/jakarta.mail.jar:\$\{webserver.home\}/modules/jaxb-osgi.jar:\$\{webserver.home\}/modules/jakarta.ejb-api.jar:\$\{webserver.home\}/modules/glassfish-naming.jar:\$\{webserver.home\}/modules/bean-validator.jar#g' build.properties
 sed -i 's#secureWebServerPort=.*#secureWebServerPort=8181#g' ts.jte
 sed -i "s#webServerHome=.*#webServerHome=$TCK_HOME/glassfish5/glassfish#g" ts.jte
 
@@ -110,4 +110,4 @@ echo "1 ${TCK_NAME} ${HOST}" > ${WORKSPACE}/args.txt
 mkdir -p ${WORKSPACE}/results/junitreports/
 ${JAVA_HOME}/bin/java -Djunit.embed.sysout=true -jar ${WORKSPACE}/docker/JTReportParser/JTReportParser.jar ${WORKSPACE}/args.txt ${JT_REPORT_DIR} ${WORKSPACE}/results/junitreports/
 
-tar zcvf ${WORKSPACE}/${TCK_NAME}-results.tar.gz ${TCK_HOME}/${TCK_NAME}report ${TCK_HOME}/${TCK_NAME}work ${WORKSPACE}/results/junitreports/
+tar zcvf ${WORKSPACE}/${TCK_NAME}-results.tar.gz ${TCK_HOME}/${TCK_NAME}report ${TCK_HOME}/${TCK_NAME}work ${WORKSPACE}/results/junitreports/ ${TCK_HOME}/glassfish5/glassfish/domains/domain1 $TCK_HOME/$TCK_NAME/bin/ts.*

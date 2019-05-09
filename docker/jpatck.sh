@@ -44,7 +44,7 @@ chmod -R 777 $TS_HOME
 
 cd $TS_HOME/bin
 
-sed -i "s#^jpa.classes=.*#jpa.classes=$TCK_HOME/glassfish5/glassfish/modules/javax.persistence.jar:$TCK_HOME/glassfish5/glassfish/modules/org.eclipse.persistence.jpa.jar:$TCK_HOME/glassfish5/glassfish/modules/javax.servlet-api.jar:$TCK_HOME/glassfish5/glassfish/modules/javax.transaction-api.jar:$TCK_HOME/glassfish5/glassfish/modules/javax.ejb-api.jar:$TCK_HOME/glassfish5/glassfish/modules/org.eclipse.persistence.antlr.jar:$TCK_HOME/glassfish5/glassfish/modules/org.eclipse.persistence.asm.jar:$TCK_HOME/glassfish5/glassfish/modules/org.eclipse.persistence.asm.jar:$TCK_HOME/glassfish5/glassfish/modules/org.eclipse.persistence.core.jar:$TCK_HOME/glassfish5/glassfish/modules/org.eclipse.persistence.dbws.jar:$TCK_HOME/glassfish5/glassfish/modules/org.eclipse.persistence.jpa.jpql.jar:$TCK_HOME/glassfish5/glassfish/modules/org.eclipse.persistence.jpa.modelgen.processor.jar:$TCK_HOME/glassfish5/glassfish/modules/org.eclipse.persistence.moxy.jar:$TCK_HOME/glassfish5/glassfish/modules/org.eclipse.persistence.oracle.jar#g" ts.jte
+sed -i "s#^jpa.classes=.*#jpa.classes=$TCK_HOME/glassfish5/glassfish/modules/jakarta.persistence.jar:$TCK_HOME/glassfish5/glassfish/modules/org.eclipse.persistence.jpa.jar:$TCK_HOME/glassfish5/glassfish/modules/jakarta.servlet-api.jar:$TCK_HOME/glassfish5/glassfish/modules/jakarta.transaction-api.jar:$TCK_HOME/glassfish5/glassfish/modules/jakarta.ejb-api.jar:$TCK_HOME/glassfish5/glassfish/modules/org.eclipse.persistence.antlr.jar:$TCK_HOME/glassfish5/glassfish/modules/org.eclipse.persistence.asm.jar:$TCK_HOME/glassfish5/glassfish/modules/org.eclipse.persistence.asm.jar:$TCK_HOME/glassfish5/glassfish/modules/org.eclipse.persistence.core.jar:$TCK_HOME/glassfish5/glassfish/modules/org.eclipse.persistence.dbws.jar:$TCK_HOME/glassfish5/glassfish/modules/org.eclipse.persistence.jpa.jpql.jar:$TCK_HOME/glassfish5/glassfish/modules/org.eclipse.persistence.jpa.modelgen.processor.jar:$TCK_HOME/glassfish5/glassfish/modules/org.eclipse.persistence.moxy.jar:$TCK_HOME/glassfish5/glassfish/modules/org.eclipse.persistence.oracle.jar#g" ts.jte
 sed -i "s#jdbc\.driver\.classes=.*#jdbc.driver.classes=$TCK_HOME/glassfish5/javadb/lib/derbyclient.jar:$TS_HOME/lib/dbprocedures.jar#g" ts.jte
 sed -i "s#jdbc\.db=.*#jdbc.db=derby#g" ts.jte
 sed -i "s#javax.persistence.provider=.*#javax.persistence.provider=org.eclipse.persistence.jpa.PersistenceProvider#g" ts.jte
@@ -62,7 +62,7 @@ mkdir -p $TCK_HOME/jpatckreport/jpatck
 mkdir -p $TCK_HOME/jpatckwork/jpatck
 
 cd $TCK_HOME/glassfish5/glassfish/bin
-./asadmin start-database --dbport 1527
+./asadmin start-database --dbhome $TCK_HOME/glassfish5/glassfish/databases --dbport 1527 --jvmoptions "-Djava.security.manager -Djava.security.policy=$TS_HOME/bin/security.policy"
 
 cd $TS_HOME/bin
 ant -f initdb.xml
@@ -77,4 +77,4 @@ echo "1 ${TCK_NAME} ${HOST}" > ${WORKSPACE}/args.txt
 mkdir -p ${WORKSPACE}/results/junitreports/
 ${JAVA_HOME}/bin/java -Djunit.embed.sysout=true -jar ${WORKSPACE}/docker/JTReportParser/JTReportParser.jar ${WORKSPACE}/args.txt ${JT_REPORT_DIR} ${WORKSPACE}/results/junitreports/
 
-tar zcvf ${WORKSPACE}/${TCK_NAME}-results.tar.gz ${TCK_HOME}/${TCK_NAME}report ${TCK_HOME}/${TCK_NAME}work ${WORKSPACE}/results/junitreports/
+tar zcvf ${WORKSPACE}/${TCK_NAME}-results.tar.gz ${TCK_HOME}/${TCK_NAME}report ${TCK_HOME}/${TCK_NAME}work ${WORKSPACE}/results/junitreports/ ${TCK_HOME}/glassfish5/glassfish/domains/domain1 $TCK_HOME/$TCK_NAME/bin/ts.*

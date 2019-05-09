@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 #
 # Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
@@ -34,11 +34,7 @@ fi
 if [ -z "${CTS_HOME}" ]; then
   export CTS_HOME="${WORKSPACE}"
 fi
-
 export TS_HOME=${CTS_HOME}/javaeetck/
-if [ -d ${TS_HOME}/tools/ant ]; then
-  export ANT_HOME=${TS_HOME}/tools/ant
-fi
 # Run CTS related steps
 echo "JAVA_HOME ${JAVA_HOME}"
 echo "ANT_HOME ${ANT_HOME}"
@@ -46,6 +42,39 @@ echo "CTS_HOME ${CTS_HOME}"
 echo "TS_HOME ${TS_HOME}"
 echo "PATH ${PATH}"
 echo "Test suite to run ${test_suite}"
+
+#Set default mailserver related env variables
+if [ -z "$MAIL_HOST" ]; then
+  export MAIL_HOST="localhost"
+fi
+if [ -z "$MAIL_USER" ]; then
+  export MAIL_USER="user01@james.local"
+fi
+if [ -z "$MAIL_FROM" ]; then
+  export MAIL_FROM="user01@james.local"
+fi
+if [ -z "$MAIL_PASSWORD" ]; then
+  export MAIL_PASSWORD="1234"
+fi
+if [ -z "$SMTP_PORT" ]; then
+  export SMTP_PORT="1025"
+fi
+if [ -z "$IMAP_PORT" ]; then
+  export IMAP_PORT="1143"
+fi
+##################################################
+
+# Set JWSDP install dir and UDDI Registry server url 
+# required for JAXR tests if not set.
+if [ -z "$UDDI_REGISTRY_URL" ]; then
+  export UDDI_REGISTRY_URL="http://localhost:8080/RegistryServer/"
+fi
+
+if [ -z "$JWSDP_HOME" ]; then
+  export  JWSDP_HOME="/opt/jwsdp-1.3"
+fi
+
+##################################################
 
 ##### installCTS.sh starts here #####
 cat ${TS_HOME}/bin/ts.jte | sed "s/-Doracle.jdbc.mapDateToTimestamp/-Doracle.jdbc.mapDateToTimestamp -Djava.security.manager/"  > ts.save
@@ -55,10 +84,16 @@ cp ts.save $TS_HOME/bin/ts.jte
 ##### installRI.sh starts here #####
 echo "Download and install GlassFish 5.0.1 ..."
 if [ -z "${GF_BUNDLE_URL}" ]; then
-  echo "[ERROR] GF_BUNDLE_URL not set"
-  exit 1
+  if [ -z "$DEFAULT_GF_BUNDLE_URL" ]; then
+    echo "[ERROR] GF_BUNDLE_URL not set"
+    exit 1
+  else 
+    echo "Using default url for GF bundle: $DEFAULT_GF_BUNDLE_URL"
+    export GF_BUNDLE_URL=$DEFAULT_GF_BUNDLE_URL
+  fi
 fi
 wget --progress=bar:force --no-cache $GF_BUNDLE_URL -O ${CTS_HOME}/latest-glassfish.zip
+rm -Rf ${CTS_HOME}/ri
 mkdir -p ${CTS_HOME}/ri
 unzip ${CTS_HOME}/latest-glassfish.zip -d ${CTS_HOME}/ri
 chmod -R 777 ${CTS_HOME}/ri
@@ -112,8 +147,8 @@ ${CTS_HOME}/ri/glassfish5/glassfish/bin/asadmin --user admin --passwordfile ${AD
 sleep 5
 echo "Killing any RI java processes that were not stopped gracefully"
 echo "Pending process to be killed:"
-ps -eaf | grep "/opt/jdk1.8.0_171/bin/java" | grep -v "grep" | grep -v "nohup" 
-for i in `ps -eaf | grep "/opt/jdk1.8.0_171/bin/java" | grep -v "grep" | grep -v "nohup" | tr -s " " | cut -d" " -f2`
+ps -eaf | grep "$JAVA_HOME/bin/java" | grep -v "grep" | grep -v "nohup" 
+for i in `ps -eaf | grep "$JAVA_HOME/bin/java" | grep -v "grep" | grep -v "nohup" | tr -s " " | cut -d" " -f2`
 do
   echo "[killJava.sh] kill -9 $i"
   kill -9 $i
@@ -126,6 +161,14 @@ mkdir -p ${CTS_HOME}/vi
 unzip ${CTS_HOME}/latest-glassfish.zip -d ${CTS_HOME}/vi
 chmod -R 777 ${CTS_HOME}/vi
 
+if [[ $test_suite == ejb30/lite* ]] || [[ "ejb30" == $test_suite ]] ; then
+  echo "Using higher JVM memory for EJB Lite suites to avoid OOM errors"
+  sed -i 's/-Xmx512m/-Xmx2048m/g' ${CTS_HOME}/vi/glassfish5/glassfish/domains/domain1/config/domain.xml
+  sed -i 's/-Xmx1024m/-Xmx2048m/g' ${CTS_HOME}/vi/glassfish5/glassfish/domains/domain1/config/domain.xml
+  sed -i 's/-Xmx512m/-Xmx2048m/g' ${CTS_HOME}/ri/glassfish5/glassfish/domains/domain1/config/domain.xml
+  sed -i 's/-Xmx1024m/-Xmx2048m/g' ${CTS_HOME}/ri/glassfish5/glassfish/domains/domain1/config/domain.xml
+fi 
+
 ${CTS_HOME}/vi/glassfish5/glassfish/bin/asadmin --user admin --passwordfile ${CTS_HOME}/change-admin-password.txt change-admin-password
 ${CTS_HOME}/vi/glassfish5/glassfish/bin/asadmin --user admin --passwordfile ${ADMIN_PASSWORD_FILE} start-domain
 ${CTS_HOME}/vi/glassfish5/glassfish/bin/asadmin --user admin --passwordfile ${ADMIN_PASSWORD_FILE} version
@@ -134,8 +177,8 @@ ${CTS_HOME}/vi/glassfish5/glassfish/bin/asadmin --user admin --passwordfile ${AD
 sleep 5
 echo "[killJava.sh] uname: LINUX"
 echo "Pending process to be killed:"
-ps -eaf | grep "/opt/jdk1.8.0_171/bin/java" | grep -v "grep" | grep -v "nohup" 
-for i in `ps -eaf | grep "/opt/jdk1.8.0_171/bin/java" | grep -v "grep" | grep -v "nohup" | tr -s " " | cut -d" " -f2`
+ps -eaf | grep "$JAVA_HOME/bin/java" | grep -v "grep" | grep -v "nohup" 
+for i in `ps -eaf | grep "$JAVA_HOME/bin/java" | grep -v "grep" | grep -v "nohup" | tr -s " " | cut -d" " -f2`
 do
   echo "[killJava.sh] kill -9 $i"
   kill -9 $i
@@ -149,8 +192,9 @@ export CTS_ANT_OPTS="-Djava.endorsed.dirs=${CTS_HOME}/vi/glassfish5/glassfish/mo
 -Djavax.xml.accessExternalSchema=all \
 -Djavax.xml.accessExternalDTD=file,http"
 
-if [ "$PROFILE" == "web" ];then
-  KEYWORDS="javaee_web_profile|jacc_web_profile|jaspic_web_profile|javamail_web_profile"
+if [[ "$PROFILE" == "web" || "$PROFILE" == "WEB" ]];then
+  #KEYWORDS="javaee_web_profile|jacc_web_profile|jaspic_web_profile|javamail_web_profile"
+  KEYWORDS="javaee_web_profile"
 fi
 
 if [ -z "${vehicle}" ];then
@@ -165,9 +209,18 @@ else
 fi
 
 if [ ! -z "$KEYWORDS" ];then
-  CTS_ANT_OPTS="${CTS_ANT_OPTS} -Dkeywords=\"${KEYWORDS}\""
+  if [ ! -z "$USER_KEYWORDS" ]; then
+    KEYWORDS="${KEYWORDS}|${USER_KEYWORDS}"
+  fi
+else
+  if [ ! -z "$USER_KEYWORDS" ]; then
+    KEYWORDS="${USER_KEYWORDS}"
+  fi
 fi
+
+CTS_ANT_OPTS="${CTS_ANT_OPTS} -Dkeywords=\"${KEYWORDS}\""
 echo "CTS_ANT_OPTS:${CTS_ANT_OPTS}"
+echo "KEYWORDS:${KEYWORDS}"
 
 export JT_REPORT_DIR=${CTS_HOME}/jakartaeetck-report
 export JT_WORK_DIR=${CTS_HOME}/jakartaeetck-work
@@ -177,12 +230,12 @@ cd ${TS_HOME}/bin
 sed -i "s#^report.dir=.*#report.dir=${JT_REPORT_DIR}#g" ts.jte
 sed -i "s#^work.dir=.*#work.dir=${JT_WORK_DIR}#g" ts.jte
 
-sed -i "s/^mailHost=.*/mailHost=localhost/g" ts.jte
+sed -i "s/^mailHost=.*/mailHost=${MAIL_HOST}/g" ts.jte
 sed -i "s/^mailuser1=.*/mailuser1=${MAIL_USER}/g" ts.jte
-sed -i "s/^mailFrom=.*/mailFrom=user01@james.local/g" ts.jte
-sed -i "s/^javamail.password=.*/javamail.password=1234/g" ts.jte
-sed -i "s/^smtp.port=.*/smtp.port=1025/g" ts.jte
-sed -i "s/^imap.port=.*/imap.port=1143/g" ts.jte
+sed -i "s/^mailFrom=.*/mailFrom=${MAIL_FROM}/g" ts.jte
+sed -i "s/^javamail.password=.*/javamail.password=${MAIL_PASSWORD}/g" ts.jte
+sed -i "s/^smtp.port=.*/smtp.port=${SMTP_PORT}/g" ts.jte
+sed -i "s/^imap.port=.*/imap.port=${IMAP_PORT}/g" ts.jte
 
 sed -i 's/^s1as.admin.passwd=.*/s1as.admin.passwd=adminadmin/g' ts.jte
 sed -i 's/^ri.admin.passwd=.*/ri.admin.passwd=adminadmin/g' ts.jte
@@ -199,8 +252,8 @@ sed -i 's/^orb.host.ri=.*/orb.host.ri=localhost/g' ts.jte
 sed -i 's/^ri.admin.port=.*/ri.admin.port=5858/g' ts.jte
 sed -i 's/^orb.port.ri=.*/orb.port.ri=3701/g' ts.jte
 
-sed -i "s#^registryURL=.*#registryURL=http://localhost:8080/RegistryServer/#g" ts.jte
-sed -i "s#^queryManagerURL=.*#queryManagerURL=http://localhost:8080/RegistryServer/#g" ts.jte
+sed -i "s#^registryURL=.*#registryURL=${UDDI_REGISTRY_URL}#g" ts.jte
+sed -i "s#^queryManagerURL=.*#queryManagerURL=${UDDI_REGISTRY_URL}#g" ts.jte
 sed -i 's/^jaxrUser=.*/jaxrUser=testuser/g' ts.jte
 sed -i 's/^jaxrPassword=.*/jaxrPassword=testuser/g' ts.jte
 sed -i 's/^jaxrUser2=.*/jaxrUser2=jaxr-sqe/g' ts.jte
@@ -208,10 +261,18 @@ sed -i 's/^jaxrPassword2=.*/jaxrPassword2=jaxrsqe/g' ts.jte
 
 sed -i "s/^wsgen.ant.classname=.*/wsgen.ant.classname=$\{ri.wsgen.ant.classname\}/g" ts.jte
 sed -i "s/^wsimport.ant.classname=.*/wsimport.ant.classname=$\{ri.wsimport.ant.classname\}/g" ts.jte
-PROXY_HOST=`echo ${http_proxy} | cut -d: -f2 | sed -e 's/\/\///g'`
-PROXY_PORT=`echo ${http_proxy} | cut -d: -f3`
-sed -i "s#^wsimport.jvmargs=.*#wsimport.jvmargs=-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttp.nonProxyHosts=localhost#g" ts.jte
-sed -i "s#^ri.wsimport.jvmargs=.*#ri.wsimport.jvmargs=-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttp.nonProxyHosts=localhost#g" ts.jte
+
+if [[ "$PROFILE" == "web" || "$PROFILE" == "WEB" ]]; then
+  sed -i "s/^javaee.level=.*/javaee.level=web connector jaxws jaxb javamail javaeemgmt javaeedeploy jacc jaspic wsmd/g" ts.jte
+  sed -i "s/^optional.tech.packages.to.ignore=.*/optional.tech.packages.to.ignore=javax.xml.rpc.handler/g" ts.jte
+fi
+
+if [ ! -z "$http_proxy" ]; then
+  PROXY_HOST=`echo ${http_proxy} | cut -d: -f2 | sed -e 's/\/\///g'`
+  PROXY_PORT=`echo ${http_proxy} | cut -d: -f3`
+  sed -i "s#^wsimport.jvmargs=.*#wsimport.jvmargs=-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttp.nonProxyHosts=localhost#g" ts.jte
+  sed -i "s#^ri.wsimport.jvmargs=.*#ri.wsimport.jvmargs=-Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT -Dhttp.nonProxyHosts=localhost#g" ts.jte
+fi
 sed -i 's/^impl.deploy.timeout.multiplier=.*/impl.deploy.timeout.multiplier=240/g' ts.jte
 sed -i 's/^javatest.timeout.factor=.*/javatest.timeout.factor=2.0/g' ts.jte
 sed -i 's/^test.ejb.stateful.timeout.wait.seconds=.*/test.ejb.stateful.timeout.wait.seconds=180/g' ts.jte
@@ -222,13 +283,14 @@ if [ "servlet" == "${test_suite}" ]; then
   sed -i 's/s1as\.java\.endorsed\.dirs=.*/s1as.java.endorsed.dirs=\$\{endorsed.dirs\}\$\{pathsep\}\$\{ts.home\}\/endorsedlib/g' ts.jte
 fi
 
-if [[ $test_suite == ejb30/lite* ]] || [[ "ejb30" == $test_suite ]] ; then
-  echo "Using higher JVM memory for EJB Lite suites to avoid OOM errors"
-  sed -i 's/-Xmx512m/-Xmx2048m/g' ${CTS_HOME}/vi/glassfish5/glassfish/domains/domain1/config/domain.xml
-  sed -i 's/-Xmx1024m/-Xmx2048m/g' ${CTS_HOME}/vi/glassfish5/glassfish/domains/domain1/config/domain.xml
-  sed -i 's/-Xmx512m/-Xmx2048m/g' ${CTS_HOME}/ri/glassfish5/glassfish/domains/domain1/config/domain.xml
-  sed -i 's/-Xmx1024m/-Xmx2048m/g' ${CTS_HOME}/ri/glassfish5/glassfish/domains/domain1/config/domain.xml
-fi 
+if [ ! -z "${DATABASE}" ];then
+  if [ "JavaDB" == "${DATABASE}" ]; then
+    echo "Using the bundled JavaDB in GlassFish. No change in ts.jte required."
+  else
+    echo "Modifying DB related properties in ts.jte"
+    ${TS_HOME}/docker/process_db_config.sh ${DATABASE} ${TS_HOME}
+  fi
+fi
 
 VI_SERVER_POLICY_FILE=${CTS_HOME}/vi/glassfish5/glassfish/domains/domain1/config/server.policy
 echo 'grant {' >> ${VI_SERVER_POLICY_FILE}
@@ -254,7 +316,7 @@ ant init.javadb
 ### populateMailbox for javamail suite - Start ###
 ESCAPED_MAIL_USER=`echo ${MAIL_USER} | sed -e 's/@/%40/g'`
 cd  ${TS_HOME}/bin
-ant -DdestinationURL="imap://${ESCAPED_MAIL_USER}:1234@localhost:1143" populateMailbox
+ant -DdestinationURL="imap://${ESCAPED_MAIL_USER}:${MAIL_PASSWORD}@${MAIL_HOST}:${IMAP_PORT}" populateMailbox
 ### populateMailbox for javamail suite - End ###
 
 ##### configRI.sh ends here #####
@@ -276,15 +338,16 @@ ${CTS_HOME}/ri/glassfish5/glassfish/bin/asadmin --user admin --passwordfile ${AD
 ### restartRI.sh ends here #####
 
 ### Registry server initialization starts here
-if [ "jaxr" == ${test_suite} ];then
-  cd /opt/jwsdp-1.3/bin
-  ./startup.sh
-  sleep 10
-  echo "Java Web Services Developer Pack started ..."
+if [[ "jaxr" == ${test_suite} ]]; then
+  if [ -f $JWSDP_HOME/bin/startup.sh ]; then
+    $JWSDP_HOME/bin/startup.sh
+    sleep 10
+    echo "Java Web Services Developer Pack started ..."
+  fi
 fi
 ### Registry server initialization ends here
 
-if [ "securityapi" == ${test_suite} ]; then
+if [[ "securityapi" == ${test_suite} ]]; then
   cd $TS_HOME/bin;
   ant init.ldap
   echo "LDAP initilized for securityapi"
@@ -295,12 +358,30 @@ cd $TS_HOME/bin;
 echo "ant start.auto.deployment.server > /tmp/deploy.out 2>&1 & "
 ant start.auto.deployment.server > /tmp/deploy.out 2>&1 &
 ### ctsStartStandardDeploymentServer.sh ends here #####
- 
+
 cd $TS_HOME/bin
-ant -f xml/impl/glassfish/s1as.xml run.cts -Dant.opts="${CTS_ANT_OPTS} ${ANT_OPTS}" -Dtest.areas="${test_suite}"
+if [ -z "$KEYWORDS" ]; then
+  ant -f xml/impl/glassfish/s1as.xml run.cts -Dant.opts="${CTS_ANT_OPTS} ${ANT_OPTS}" -Dtest.areas="${test_suite}"
+else
+  ant -f xml/impl/glassfish/s1as.xml run.cts -Dkeywords=\"${KEYWORDS}\" -Dant.opts="${CTS_ANT_OPTS} ${ANT_OPTS}" -Dtest.areas="${test_suite}"
+fi
+
+
+# Check if there are any failures in the test. If so, re-run those tests.
+FAILED_COUNT=0
+ERROR_COUNT=0
+TEST_SUITE=`echo "${test_suite}" | tr '/' '_'`
+FAILED_COUNT=`cat ${JT_REPORT_DIR}/${TEST_SUITE}/text/summary.txt | grep 'Failed.' | wc -l`
+ERROR_COUNT=`cat ${JT_REPORT_DIR}/${TEST_SUITE}/text/summary.txt | grep 'Error.' | wc -l`
+if [[ $FAILED_COUNT -gt 0 || $ERROR_COUNT -gt 0 ]]; then
+  echo "One or more tests failed. Failure count:$FAILED_COUNT/Error count:$ERROR_COUNT"
+  echo "Re-running only the failed, error tests"
+  ant -f xml/impl/glassfish/s1as.xml run.cts -Dant.opts="${CTS_ANT_OPTS} ${ANT_OPTS}" -Drun.client.args="-DpriorStatus=fail,error"  -DbuildJwsJaxws=false -Dtest.areas="${test_suite}"
+  # Generate combined report for both the runs.
+  ant -Dreport.for=com/sun/ts/tests/$test_suite -Dreport.dir=${JT_REPORT_DIR}/${TEST_SUITE} -Dwork.dir=${JT_WORK_DIR}/${TEST_SUITE} report
+fi
 
 export HOST=`hostname -f`
-TEST_SUITE=`echo "${test_suite}" | tr '/' '_'`
 echo "1 ${TEST_SUITE} ${HOST}" > ${CTS_HOME}/args.txt
 mkdir -p ${WORKSPACE}/results/junitreports/
 ${JAVA_HOME}/bin/java -Djunit.embed.sysout=true -jar ${TS_HOME}/docker/JTReportParser/JTReportParser.jar ${CTS_HOME}/args.txt ${JT_REPORT_DIR} ${WORKSPACE}/results/junitreports/
@@ -310,5 +391,14 @@ if [ -z ${vehicle} ];then
   RESULT_FILE_NAME=${TEST_SUITE}-results.tar.gz
 else
   RESULT_FILE_NAME=${TEST_SUITE}_${vehicle_name}-results.tar.gz
+  sed -i "s/name=\"${TEST_SUITE}\"/name=\"${TEST_SUITE}_${vehicle_name}\"/g" ${WORKSPACE}/results/junitreports/${TEST_SUITE}-junit-report.xml
+  mv ${WORKSPACE}/results/junitreports/${TEST_SUITE}-junit-report.xml  ${WORKSPACE}/results/junitreports/${TEST_SUITE}_${vehicle_name}-junit-report.xml
 fi
-tar zcvf ${WORKSPACE}/${RESULT_FILE_NAME} ${JT_REPORT_DIR} ${JT_WORK_DIR} ${WORKSPACE}/results/junitreports/ ${CTS_HOME}/javaeetck/bin/ts.* ${CTS_HOME}/vi/glassfish5/glassfish/domains/domain1/logs/ ${CTS_HOME}/vi/glassfish5/glassfish/domains/domain1/config
+tar zcvf ${WORKSPACE}/${RESULT_FILE_NAME} ${JT_REPORT_DIR} ${JT_WORK_DIR} ${WORKSPACE}/results/junitreports/ ${CTS_HOME}/javaeetck/bin/ts.* ${CTS_HOME}/vi/glassfish5/glassfish/domains/domain1/
+
+if [ -z ${vehicle} ];then
+  JUNIT_REPORT_FILE_NAME=${TEST_SUITE}-junitreports.tar.gz
+else
+  JUNIT_REPORT_FILE_NAME=${TEST_SUITE}_${vehicle_name}-junitreports.tar.gz
+fi
+tar zcvf ${WORKSPACE}/${JUNIT_REPORT_FILE_NAME} ${WORKSPACE}/results/junitreports/

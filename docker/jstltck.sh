@@ -60,8 +60,8 @@ sed -i 's#jstl\.db\.driver=.*#jstl.db.driver=org.apache.derby.jdbc.ClientDriver#
 sed -i 's#jstl\.db\.user=.*#jstl.db.user=cts1#g' ts.jte
 sed -i 's#jstl\.db\.password=.*#jstl.db.password=cts1#g' ts.jte
 sed -i 's#sigTestClasspath=.*#sigTestClasspath=\$\{ts.home\}/classes:\$\{jstl.classes\}:\$\{jspservlet.classes\}:\$\{JAVA_HOME\}/lib/rt.jar#g' ts.jte
-sed -i 's#jspservlet.classes=.*#jspservlet.classes=\$\{webServerHome\}/modules/javax.servlet-api.jar:\$\{webServerHome\}/modules/javax.servlet.jsp.jar:\$\{webServerHome\}/modules/javax.servlet.jsp-api.jar:\$\{webServerHome\}/modules/javax.el.jar#g' ts.jte
-sed -i 's#jstl.classes=.*#jstl.classes=\$\{webServerHome\}/modules/javax.servlet.jsp.jstl.jar\$\{pathsep\}\$\{webServerHome\}/modules/javax.servlet.jsp.jstl-api.jar#g' ts.jte
+sed -i 's#jspservlet.classes=.*#jspservlet.classes=\$\{webServerHome\}/modules/jakarta.servlet-api.jar:\$\{webServerHome\}/modules/javax.servlet.jsp.jar:\$\{webServerHome\}/modules/jakarta.servlet.jsp-api.jar:\$\{webServerHome\}/modules/jakarta.el.jar#g' ts.jte
+sed -i 's#jstl.classes=.*#jstl.classes=\$\{webServerHome\}/modules/javax.servlet.jsp.jstl.jar\$\{pathsep\}\$\{webServerHome\}/modules/jakarta.servlet.jsp.jstl-api.jar#g' ts.jte
 
 sed -i "s#^report.dir=.*#report.dir=$TCK_HOME/jstltckreport/jstltck#g" ts.jte
 sed -i "s#^work.dir=.*#work.dir=$TCK_HOME/jstltckwork/jstltck#g" ts.jte
@@ -91,4 +91,4 @@ echo "1 ${TCK_NAME} ${HOST}" > ${WORKSPACE}/args.txt
 mkdir -p ${WORKSPACE}/results/junitreports/
 ${JAVA_HOME}/bin/java -Djunit.embed.sysout=true -jar ${WORKSPACE}/docker/JTReportParser/JTReportParser.jar ${WORKSPACE}/args.txt ${JT_REPORT_DIR} ${WORKSPACE}/results/junitreports/
 
-tar zcvf ${WORKSPACE}/${TCK_NAME}-results.tar.gz ${TCK_HOME}/${TCK_NAME}report ${TCK_HOME}/${TCK_NAME}work ${WORKSPACE}/results/junitreports/
+tar zcvf ${WORKSPACE}/${TCK_NAME}-results.tar.gz ${TCK_HOME}/${TCK_NAME}report ${TCK_HOME}/${TCK_NAME}work ${WORKSPACE}/results/junitreports/ ${TCK_HOME}/glassfish5/glassfish/domains/domain1 $TCK_HOME/$TCK_NAME/bin/ts.*
