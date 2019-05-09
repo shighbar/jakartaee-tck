@@ -104,7 +104,7 @@ spec:
         value: -Xmx4G
     resources:
       limits:
-        memory: "8Gi"
+        memory: "6Gi"
         cpu: "2.0"
   - name: james-mail
     image: anajosep/cts-mailserver:0.1
